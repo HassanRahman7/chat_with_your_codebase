@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Local storage
+backend/storage/chroma/*
+backend/storage/repositories/*
+backend/storage/temporary/*
+!backend/storage/**/.gitkeep
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+API.md
+Architecture.md
+Database.md
+Design.md
+PRD.md
