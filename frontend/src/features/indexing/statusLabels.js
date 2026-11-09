@@ -50,7 +50,10 @@ export function isActiveStatus(status) {
 }
 
 export function isPipelinePending(errorCode) {
-  return errorCode === "indexing_pipeline_pending";
+  return (
+    errorCode === "indexing_pipeline_pending" ||
+    errorCode === "embedding_pipeline_pending"
+  );
 }
 
 export function statusTone(status, errorCode) {
@@ -59,7 +62,12 @@ export function statusTone(status, errorCode) {
 }
 
 export function statusLabel(status, errorCode) {
-  if (isPipelinePending(errorCode)) return "Cloned — indexing pending";
+  if (errorCode === "indexing_pipeline_pending") {
+    return "Cloned — indexing pending";
+  }
+  if (errorCode === "embedding_pipeline_pending") {
+    return "Chunks ready — embeddings pending";
+  }
   return PUBLIC_STATUS_LABELS[status] ?? status;
 }
 

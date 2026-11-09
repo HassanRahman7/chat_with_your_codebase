@@ -1,21 +1,26 @@
 """Background indexing worker.
 
-Phase 1 performs validation, cloning and commit capture. Parsing, chunking,
-embeddings and vector storage are layered on in later phases. Until that
-pipeline exists the job terminates with an explicit ``indexing_pipeline_pending``
-result rather than pretending the repository is ready.
+Phase 2 completes validation, cloning, scanning, parsing and chunking. It
+writes an inspectable JSONL chunk manifest and then stops before Phase 3 with
+an explicit ``embedding_pipeline_pending`` result rather than pretending the
+repository is ready for vector search.
 """
 
 from __future__ import annotations
 
+import json
 import logging
+from dataclasses import asdict
 from datetime import datetime, timezone
+from pathlib import Path
 from uuid import UUID
 
 from app.config import settings
 from app.database.models import IndexingJob, Repository
 from app.database.session import SessionLocal
-from app.services.errors import RepositoryCloneError
+from app.services.chunking_service import CodeChunker
+from app.services.errors import RepositoryCloneError, RepositoryScanError
+from app.services.file_scanner_service import scan_repository
 from app.services.github_service import (
     canonicalize_github_url,
     clone_repository,
@@ -24,15 +29,15 @@ from app.services.github_service import (
 
 logger = logging.getLogger(__name__)
 
-PIPELINE_PENDING_CODE = "indexing_pipeline_pending"
-PIPELINE_PENDING_MESSAGE = (
-    "Repository cloned successfully. Code parsing and indexing are enabled in "
-    "the next build phase."
+EMBEDDING_PENDING_CODE = "embedding_pipeline_pending"
+EMBEDDING_PENDING_MESSAGE = (
+    "Repository scanned and code chunks created. Embeddings and vector "
+    "indexing are enabled in the next build phase."
 )
 
 
 def run_indexing_job(repository_id: UUID, job_id: UUID) -> None:
-    """Clone a registered repository in a worker-owned database session."""
+    """Run the Phase 1-2 indexing pipeline in a worker-owned session."""
     db = SessionLocal()
     try:
         job = db.get(IndexingJob, job_id)
@@ -73,28 +78,73 @@ def run_indexing_job(repository_id: UUID, job_id: UUID) -> None:
         repository.last_checked_at = datetime.now(timezone.utc)
         repository.status = "indexing"
         job.commit_sha = clone_result.commit_sha
-        job.current_step = "cloning_repository"
-        job.progress = 10
+        job.current_step = "discovering_files"
+        job.progress = 12
         db.commit()
 
-        # Phase 1 boundary. Later phases replace this block with scanning,
-        # parsing, embedding, storage, verification and activation.
-        message = PIPELINE_PENDING_MESSAGE
-        job.status = "failed"
-        job.error_code = PIPELINE_PENDING_CODE
-        job.error_message = message
-        job.progress = 10
-        job.completed_at = datetime.now(timezone.utc)
-        repository.status = "failed"
-        repository.last_error = message
+        scan_result = scan_repository(Path(clone_result.local_path))
+        job.files_discovered = len(scan_result.files)
+        job.files_processed = 0
+        job.total_chunks = 0
+        job.current_step = "parsing_files"
+        job.progress = 25
         db.commit()
 
         logger.info(
-            "Cloned repository id=%s at commit=%s; indexing pipeline pending",
+            "Scanned repository id=%s files=%s skipped=%s",
             repository.id,
-            clone_result.commit_sha,
+            len(scan_result.files),
+            len(scan_result.skipped),
+        )
+
+        manifest_path = _manifest_path(repository.id, job.id)
+        chunker = CodeChunker()
+        total_chunks = 0
+        discovered_count = max(1, len(scan_result.files))
+
+        with manifest_path.open("w", encoding="utf-8") as manifest:
+            for source_file in scan_result.files:
+                chunks = chunker.process_source_file(
+                    repository_id=repository.id,
+                    commit_sha=clone_result.commit_sha,
+                    source_file=source_file,
+                )
+                for chunk in chunks:
+                    manifest.write(json.dumps(asdict(chunk), default=str) + "\n")
+                    total_chunks += 1
+
+                job.files_processed += 1
+                job.total_chunks = total_chunks
+                completed_fraction = job.files_processed / discovered_count
+                job.progress = 25 + round(50 * completed_fraction)
+                job.current_step = (
+                    "creating_chunks" if job.files_processed >= discovered_count // 2 else "parsing_files"
+                )
+                if job.files_processed % 25 == 0:
+                    db.commit()
+
+        job.current_step = "generating_embeddings"
+        job.progress = 80
+        db.commit()
+
+        _fail_job(
+            db,
+            repository_id,
+            job_id,
+            EMBEDDING_PENDING_CODE,
+            EMBEDDING_PENDING_MESSAGE,
+        )
+
+        logger.info(
+            "Chunked repository id=%s files=%s chunks=%s manifest=%s",
+            repository.id,
+            job.files_processed,
+            total_chunks,
+            manifest_path,
         )
     except RepositoryCloneError as exc:
+        _fail_job(db, repository_id, job_id, exc.code, exc.message)
+    except RepositoryScanError as exc:
         _fail_job(db, repository_id, job_id, exc.code, exc.message)
     except Exception:  # noqa: BLE001 - worker must never leak internals
         logger.exception(
@@ -111,6 +161,11 @@ def run_indexing_job(repository_id: UUID, job_id: UUID) -> None:
         )
     finally:
         db.close()
+
+
+def _manifest_path(repository_id: UUID, job_id: UUID) -> Path:
+    settings.ensure_storage_directories()
+    return settings.temporary_storage_directory / f"chunks-{repository_id}-{job_id}.jsonl"
 
 
 def _fail_job(
@@ -139,7 +194,6 @@ def _fail_job(
 
         if repository is not None:
             repository.last_error = message
-            # A failed re-index must not hide a usable previous index.
             repository.status = (
                 "ready" if repository.active_index_version else "failed"
             )

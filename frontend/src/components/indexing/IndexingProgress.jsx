@@ -102,9 +102,17 @@ export function IndexingProgress({ status }) {
       ) : null}
 
       {pendingPipeline ? (
-        <Callout tone="warning" icon={AlertTriangle} title="Repository cloned">
+        <Callout
+          tone="warning"
+          icon={AlertTriangle}
+          title={
+            job?.error_code === "embedding_pipeline_pending"
+              ? "Chunks ready"
+              : "Repository cloned"
+          }
+        >
           {job?.error_message ||
-            "The repository clone is ready. Code parsing and indexing are enabled in the next build phase."}
+            "Indexing is paused at a completed phase boundary."}
         </Callout>
       ) : job?.status === "failed" ? (
         <Callout tone="danger" icon={AlertTriangle} title="Indexing failed">

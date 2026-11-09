@@ -13,6 +13,9 @@
 # torch / sentence-transformers.
 
 # --- Core API / persistence ------------------------------------------------
+tree-sitter==0.26.0
+tree-sitter-python==0.25.0
+tree-sitter-javascript==0.25.0
 fastapi==0.162.2
 uvicorn==0.54.0
 pydantic==2.14.2

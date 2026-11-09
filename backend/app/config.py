@@ -42,7 +42,10 @@ class Settings(BaseSettings):
     # --- Runtime ---------------------------------------------------------
     backend_host: str = "127.0.0.1"
     backend_port: int = 8000
-    frontend_origin: str = "http://localhost:5173"
+    frontend_origin: str = (
+        "http://localhost:5173,http://127.0.0.1:5173,"
+        "http://localhost:5174,http://127.0.0.1:5174"
+    )
 
     # --- Persistence -----------------------------------------------------
     database_url: str = (
@@ -69,6 +72,15 @@ class Settings(BaseSettings):
     max_repository_files: int = 5000
     clone_timeout_seconds: int = 300
     max_github_url_length: int = 2048
+
+    # --- Code chunking ----------------------------------------------------
+    # Keep a complete function in one chunk when practical, while respecting
+    # the BGE embedding model's 512-token input budget. Character limits are
+    # deterministic and language-neutral; token counts are estimated in
+    # chunking until Phase 3 supplies the real tokenizer.
+    chunk_max_chars: int = 4000
+    chunk_max_tokens: int = 512
+    chunk_overlap_lines: int = 5
 
     # --- Request limits ---------------------------------------------------
     max_question_length: int = 4000

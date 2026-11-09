@@ -1,6 +1,9 @@
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
+import { createRepository } from "../../features/repositories/repositoriesApi";
 import { Button } from "../ui/Button";
+import { RepositoryUrlForm } from "../repository/RepositoryUrlForm";
 import { WorkspacePreview } from "./WorkspacePreview";
 
 const SIGNALS = [
@@ -10,6 +13,22 @@ const SIGNALS = [
 ];
 
 export function Hero() {
+  const navigate = useNavigate();
+
+  async function handleAnalyze(url) {
+    try {
+      const result = await createRepository(url);
+      navigate(`/repositories/${result.repository.id}`);
+    } catch (error) {
+      const existingId = error?.details?.repository_id;
+      if (error?.code === "repository_already_exists" && existingId) {
+        navigate(`/repositories/${existingId}`);
+        return;
+      }
+      throw error;
+    }
+  }
+
   return (
     <section className="border-b border-line">
       <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 pb-16 pt-14 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:items-center lg:gap-14 lg:pb-24 lg:pt-20">
@@ -28,9 +47,13 @@ export function Hero() {
             answers grounded in real files, functions and line-level citations.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          <div className="mt-7 max-w-xl">
+            <RepositoryUrlForm onSubmit={handleAnalyze} autoFocus />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <a href="#workflow">
-              <Button size="lg">
+              <Button variant="secondary">
                 Explore how it works
                 <ArrowRight size={15} aria-hidden="true" />
               </Button>

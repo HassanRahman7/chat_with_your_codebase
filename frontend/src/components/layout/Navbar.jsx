@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Braces } from "lucide-react";
 
 import { cn } from "../../lib/utils";
@@ -33,6 +33,17 @@ export function Navbar({ health, className }) {
         </Link>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              cn(
+                "rounded-control px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-black/[0.04] hover:text-ink",
+                isActive ? "bg-surface text-white" : "text-muted",
+              )
+            }
+          >
+            Repositories
+          </NavLink>
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}

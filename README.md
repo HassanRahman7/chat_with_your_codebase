@@ -61,8 +61,13 @@ Open http://localhost:5173. The landing page shows the live backend status from
 - [x] Phase 0 — Foundation: app scaffolding, config, CORS, error envelope,
       request IDs, PostgreSQL/ChromaDB connectivity, Alembic scaffold, health
       endpoint, design tokens and landing page.
-- [ ] Phase 1 — Repository ingestion
-- [ ] Phase 2 — Parsing and chunking
+- [x] Phase 1 — Repository ingestion: PostgreSQL models and initial Alembic
+      migration, GitHub URL validation, asynchronous shallow clone, repository
+      and indexing-status APIs, landing URL form and repository dashboard.
+- [x] Phase 2 — Parsing and chunking: Tree-sitter Python/JavaScript parsers,
+      deterministic file scanning with security exclusions, normalized symbols,
+      syntax-aware chunks, fallback chunking, and status/manifest reporting.
+- [ ] Phase 3 — Embeddings and vector search
 - [ ] Phase 3 — Embeddings and vector search
 - [ ] Phase 4 — RAG and citations
 - [ ] Phase 5 — File and chat experience

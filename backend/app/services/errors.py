@@ -70,3 +70,26 @@ class RepositoryCloneError(Exception):
 class RepositoryTooLargeError(RepositoryCloneError):
     def __init__(self, message: str) -> None:
         super().__init__(message, code="repository_too_large")
+
+
+class RepositoryScanError(Exception):
+    """Raised inside the worker when a repository cannot be scanned safely."""
+
+    def __init__(self, message: str, *, code: str = "repository_scan_failed") -> None:
+        self.code = code
+        self.message = message
+        super().__init__(message)
+
+
+class RepositoryTooManyFilesError(RepositoryScanError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, code="repository_too_many_files")
+
+
+class NoSupportedSourceFilesError(RepositoryScanError):
+    def __init__(self, message: str) -> None:
+        super().__init__(message, code="no_supported_source_files")
+
+
+class ParserError(Exception):
+    """Raised when source text cannot be decoded or parsed into a tree."""
