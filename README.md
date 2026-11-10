@@ -75,7 +75,10 @@ Open http://localhost:5173. The landing page shows the live backend status from
       repository-scoped retrieval with source_id validation, citation integrity
       (no model-generated paths/line numbers), insufficient-evidence handling,
       conversation/message persistence, and chat/conversation APIs.
-- [ ] Phase 5 — File and chat UI
+- [x] Phase 5 — File and chat UI: Monaco Editor code viewer, file tree
+      explorer, repository workspace with shared workspace context, citation
+      click-to-navigate, file tree and content API endpoints.
+- [ ] Phase 6 — Reliability and evaluation
 - [ ] Phase 3 — Embeddings and vector search
 - [ ] Phase 4 — RAG and citations
 - [ ] Phase 5 — File and chat experience

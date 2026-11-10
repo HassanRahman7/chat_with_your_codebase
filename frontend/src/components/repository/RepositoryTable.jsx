@@ -76,7 +76,7 @@ export function RepositoryTable({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
-                    <Link to={`/repositories/${repository.id}`}>
+                    <Link to={`/repositories/${repository.id}/workspace`}>
                       <Button variant="secondary" size="sm">
                         Open
                       </Button>
