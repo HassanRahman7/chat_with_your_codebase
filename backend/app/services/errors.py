@@ -119,3 +119,16 @@ class RepositoryDeletedMidIndexing(Exception):
     The worker stops gracefully and does not mark the job as failed, because
     the repository is being intentionally removed.
     """
+
+
+class LLMError(AppError):
+    """Raised when the Gemini provider cannot produce a valid answer."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "llm_provider_failed",
+        status_code: int = 502,
+    ) -> None:
+        super().__init__(message=message, code=code, status_code=status_code)

@@ -71,7 +71,11 @@ Open http://localhost:5173. The landing page shows the live backend status from
       embedding service, ChromaDB vector store with repository + index version
       filtering, end-to-end indexing worker (embed → store → verify → activate),
       and repository READY state.
-- [ ] Phase 4 — RAG and citations
+- [x] Phase 4 — RAG and citations: Gemini LLM integration via REST API,
+      repository-scoped retrieval with source_id validation, citation integrity
+      (no model-generated paths/line numbers), insufficient-evidence handling,
+      conversation/message persistence, and chat/conversation APIs.
+- [ ] Phase 5 — File and chat UI
 - [ ] Phase 3 — Embeddings and vector search
 - [ ] Phase 4 — RAG and citations
 - [ ] Phase 5 — File and chat experience

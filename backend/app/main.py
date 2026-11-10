@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.error_handlers import register_exception_handlers
 from app.api.middleware import RequestIDMiddleware
-from app.api.routers import health, indexing, repositories
+from app.api.routers import chat, health, indexing, repositories
 from app.config import settings
 from app.utils.logging import configure_logging
 
@@ -48,6 +48,7 @@ def create_app() -> FastAPI:
     application.include_router(health.router, prefix=settings.api_prefix)
     application.include_router(repositories.router, prefix=settings.api_prefix)
     application.include_router(indexing.router, prefix=settings.api_prefix)
+    application.include_router(chat.router, prefix=settings.api_prefix)
 
     @application.get("/", include_in_schema=False)
     def service_root() -> dict[str, str]:
