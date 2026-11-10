@@ -91,5 +91,31 @@ class NoSupportedSourceFilesError(RepositoryScanError):
         super().__init__(message, code="no_supported_source_files")
 
 
+class EmbeddingError(Exception):
+    """Raised when the embedding model cannot encode text."""
+
+    def __init__(self, message: str, *, code: str = "embedding_failed") -> None:
+        self.code = code
+        self.message = message
+        super().__init__(message)
+
+
+class VectorStoreError(Exception):
+    """Raised when ChromaDB cannot store or retrieve vectors."""
+
+    def __init__(self, message: str, *, code: str = "vector_store_failed") -> None:
+        self.code = code
+        self.message = message
+        super().__init__(message)
+
+
 class ParserError(Exception):
     """Raised when source text cannot be decoded or parsed into a tree."""
+
+
+class RepositoryDeletedMidIndexing(Exception):
+    """Raised internally when a repository is deleted while indexing is running.
+
+    The worker stops gracefully and does not mark the job as failed, because
+    the repository is being intentionally removed.
+    """

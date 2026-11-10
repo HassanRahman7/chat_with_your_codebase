@@ -67,7 +67,11 @@ Open http://localhost:5173. The landing page shows the live backend status from
 - [x] Phase 2 — Parsing and chunking: Tree-sitter Python/JavaScript parsers,
       deterministic file scanning with security exclusions, normalized symbols,
       syntax-aware chunks, fallback chunking, and status/manifest reporting.
-- [ ] Phase 3 — Embeddings and vector search
+- [x] Phase 3 — Embeddings and vector search: Sentence Transformer (BGE)
+      embedding service, ChromaDB vector store with repository + index version
+      filtering, end-to-end indexing worker (embed → store → verify → activate),
+      and repository READY state.
+- [ ] Phase 4 — RAG and citations
 - [ ] Phase 3 — Embeddings and vector search
 - [ ] Phase 4 — RAG and citations
 - [ ] Phase 5 — File and chat experience

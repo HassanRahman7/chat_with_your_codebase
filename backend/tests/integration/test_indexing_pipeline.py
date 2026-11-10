@@ -86,10 +86,15 @@ def test_worker_scans_parses_and_chunks_repository(
         assert job.files_discovered == 2
         assert job.files_processed == 2
         assert job.total_chunks >= 2
-        assert job.current_step == "generating_embeddings"
-        assert job.error_code == "embedding_pipeline_pending"
-        assert job.error_message
-        assert job.progress == 80
+        assert job.status == "succeeded"
+        assert job.current_step == "completed"
+        assert job.progress == 100
+        assert job.error_code is None
+        assert repository.status == "ready"
+        assert repository.active_index_version == str(job.index_version)
+        assert repository.active_commit_sha == "abc123"
+        assert repository.indexed_at is not None
+        assert repository.last_error is None
     finally:
         worker_session.close()
 
@@ -109,6 +114,21 @@ def test_worker_scans_parses_and_chunks_repository(
         "src/main.py",
         "src/app.js",
     }
+
+    # Verify ChromaDB has the vectors and they are queryable.
+    from app.services.embedding_service import encode_query
+    from app.services.vector_store_service import query_chunks
+
+    query_vec = encode_query("how to add two numbers")
+    results = query_chunks(repository_id, job.index_version, query_vec, top_k=5)
+    assert results
+    assert all(r.repository_id == str(repository_id) for r in results)
+    assert all(r.score is not None and 0.0 <= r.score <= 1.0 for r in results)
+
+    # Verify count matches.
+    from app.services.vector_store_service import count_chunks
+
+    assert count_chunks(repository_id, job.index_version) == job.total_chunks
 
 
 def test_worker_fails_cleanly_when_no_supported_files_exist(
@@ -146,5 +166,65 @@ def test_worker_fails_cleanly_when_no_supported_files_exist(
         job = worker_session.get(IndexingJob, job_id)
         assert job is not None
         assert job.error_code == "no_supported_source_files"
+    finally:
+        worker_session.close()
+
+
+def test_worker_stops_gracefully_when_repository_deleted_mid_indexing(
+    db_session,
+    test_engine,
+    tmp_path,
+    monkeypatch,
+):
+    """Deleting a repository while indexing runs must not crash the worker.
+
+    The worker should stop processing and leave the job in its current state
+    rather than marking it failed or raising an unhandled StaleDataError.
+    """
+    repository_id, job_id = _create_job(db_session)
+    clone_root = tmp_path / "clone"
+    _write(clone_root, "src/main.py", "def add(a, b):\n    return a + b\n")
+
+    factory = sessionmaker(
+        bind=test_engine,
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=False,
+    )
+    monkeypatch.setattr(indexing_service, "SessionLocal", factory)
+    monkeypatch.setattr(settings, "temporary_storage_directory", tmp_path / "temporary")
+    monkeypatch.setattr(
+        indexing_service,
+        "clone_repository",
+        lambda *args, **kwargs: CloneResult(
+            commit_sha="abc123",
+            default_branch="main",
+            local_path=str(clone_root),
+        ),
+    )
+
+    # Simulate the repository being deleted mid-indexing: the first commit
+    # after upserting vectors fails because the job row no longer exists.
+    original_safe_commit = indexing_service._safe_commit
+    call_count = {"n": 0}
+
+    def failing_safe_commit(db):
+        call_count["n"] += 1
+        if call_count["n"] >= 2:
+            return False
+        return original_safe_commit(db)
+
+    monkeypatch.setattr(indexing_service, "_safe_commit", failing_safe_commit)
+
+    # Should not raise.
+    indexing_service.run_indexing_job(repository_id, job_id)
+
+    worker_session = factory()
+    try:
+        job = worker_session.get(IndexingJob, job_id)
+        assert job is not None
+        # The worker stopped gracefully; it did not mark the job as failed.
+        assert job.error_code is None
+        assert job.status != "failed"
     finally:
         worker_session.close()
