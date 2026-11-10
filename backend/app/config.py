@@ -57,9 +57,18 @@ class Settings(BaseSettings):
     chroma_collection_name: str = "code_chunks"
 
     # --- AI providers ----------------------------------------------------
+    llm_provider: str = "gemini"
+
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.8-flash"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
+
+    # --- OpenRouter ------------------------------------------------------
+    openrouter_api_key: str | None = None
+    openrouter_model: str = "nvidia/nemotron-3-ultra-550b-a55b:free"
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_site_url: str | None = None
+    openrouter_app_name: str | None = None
     embedding_batch_size: int = 32
 
     # --- Retrieval -------------------------------------------------------

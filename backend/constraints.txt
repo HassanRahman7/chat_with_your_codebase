@@ -29,6 +29,7 @@ chromadb==1.5.9
 GitPython==3.2.1
 python-dotenv==1.2.4
 httpx==0.28.1
+openai==1.99.0
 pytest==8.4.2
 
 # --- Phase 3 ML / embeddings ----------------------------------------------

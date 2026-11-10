@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -114,11 +114,25 @@ def test_parse_structured_output_strips_markdown_fences() -> None:
 
 
 def test_parse_structured_output_invalid_raises() -> None:
-    with pytest.raises(LLMError):
-        rag_service._parse_structured_output("not json at all")
+    """Invalid JSON that also fails the repair path raises LLMError."""
+    # Mock generate_answer to return invalid JSON, so the repair path fails too.
+    with patch(
+        "app.services.rag_service.generate_answer",
+        return_value="not valid json either",
+    ):
+        with pytest.raises(LLMError):
+            rag_service._parse_structured_output("not json at all")
 
-    with pytest.raises(LLMError):
-        rag_service._parse_structured_output('{"answer": 123, "citations": [], "insufficient_evidence": false}')
+    with patch(
+        "app.services.rag_service.generate_answer",
+        return_value='{"answer": 123, "citations": [], "insufficient_evidence": false}',
+    ):
+        with pytest.raises(LLMError):
+            rag_service._parse_structured_output("not json at all")
 
-    with pytest.raises(LLMError):
-        rag_service._parse_structured_output('{"answer": "Hi", "citations": [], "insufficient_evidence": "yes"}')
+    with patch(
+        "app.services.rag_service.generate_answer",
+        return_value='{"answer": "Hi", "citations": [], "insufficient_evidence": "yes"}',
+    ):
+        with pytest.raises(LLMError):
+            rag_service._parse_structured_output("not json at all")
