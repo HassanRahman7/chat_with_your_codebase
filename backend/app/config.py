@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # --- AI providers ----------------------------------------------------
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.8-flash"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_batch_size: int = 32
 

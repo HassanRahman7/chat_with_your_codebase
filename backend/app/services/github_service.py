@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import shutil
+import stat
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -122,7 +123,7 @@ def clone_repository(
         raise RepositoryCloneError("Unsafe repository clone destination.")
 
     if target.exists():
-        shutil.rmtree(target)
+        _remove_directory(target)
     target.parent.mkdir(parents=True, exist_ok=True)
 
     environment = os.environ.copy()
@@ -242,6 +243,12 @@ def _directory_size(path: Path) -> int:
     return total
 
 
+def _handle_remove_readonly(func, path, exc_info):
+    """On Windows, .git packs can be read-only; chmod and retry."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def _remove_directory(path: Path) -> None:
     if path.exists():
-        shutil.rmtree(path, ignore_errors=True)
+        shutil.rmtree(path, onerror=_handle_remove_readonly)

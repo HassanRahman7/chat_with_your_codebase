@@ -11,7 +11,6 @@ import logging
 from sqlalchemy import text
 
 from app.database.session import engine
-from app.database.vector_db import get_chroma_client
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +27,12 @@ def check_postgresql() -> str:
 
 
 def check_chromadb() -> str:
-    """Return ``ok`` if the ChromaDB client can heartbeat."""
+    """Return ``ok`` if the in-memory vector store is available."""
     try:
-        get_chroma_client().heartbeat()
+        # The in-memory vector store is always available once imported.
+        from app.services.vector_store_service import _vector_store  # noqa: F401
+
         return "ok"
     except Exception as exc:  # noqa: BLE001 - report state, never details
-        logger.warning("ChromaDB health check failed: %s", type(exc).__name__)
+        logger.warning("Vector store health check failed: %s", type(exc).__name__)
         return "unavailable"

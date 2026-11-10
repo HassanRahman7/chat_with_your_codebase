@@ -23,6 +23,7 @@ from app.services.github_service import (
     remove_repository_directory,
     repository_clone_path,
 )
+from app.services.vector_store_service import delete_repository_index
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +217,12 @@ def delete_repository(db: Session, repository_id: UUID) -> None:
     except Exception as exc:  # noqa: BLE001 - converted to a safe public error
         logger.exception("Repository cleanup failed for id=%s", repository.id)
         raise RepositoryCleanupError() from exc
+
+    # Also purge any persisted vector data for this repository.
+    try:
+        delete_repository_index(repository_id)
+    except Exception:  # noqa: BLE001 - never fail deletion over vector cleanup
+        logger.exception("Vector cleanup failed for id=%s", repository_id)
 
     try:
         db.delete(repository)

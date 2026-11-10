@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { getFileContent } from "../../features/files/filesApi";
@@ -21,13 +21,17 @@ const editorOptions = {
   automaticLayout: true,
 };
 
-export function CodeViewer({ repositoryId, filePath, commitSha }) {
-  const { selectCitation, activeCitation } = useWorkspace();
+export function CodeViewer({ repositoryId }) {
+  const { selectCitation, activeCitation, selectedFile } = useWorkspace();
   const editorRef = useRef(null);
+  const decorationIds = useRef([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("text");
+
+  const filePath = selectedFile?.path;
+  const commitSha = selectedFile?.commitSha;
 
   const controllerRef = useRef(null);
 
@@ -63,18 +67,38 @@ export function CodeViewer({ repositoryId, filePath, commitSha }) {
     }
   }
 
+  // Highlight the active citation range using Monaco decorations.
   useEffect(() => {
-    if (activeCitation && editorRef.current) {
-      const { start_line: startLine, end_line: endLine } = activeCitation;
-      const range = {
-        startLineNumber: startLine,
-        startColumn: 1,
-        endLineNumber: endLine,
-        endColumn: Math.max(1, endLine - startLine + 1),
-      };
-      editorRef.current.setSelection(range);
-      editorRef.current.revealRangeInCenter(range, 0.5);
-    }
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    // Clear previous decorations.
+    decorationIds.current = editor.deltaDecorations(decorationIds.current, []);
+
+    if (!activeCitation) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    const { start_line: startLine, end_line: endLine } = activeCitation;
+    const endColumn = model.getLineLength(endLine) + 1;
+
+    decorationIds.current = editor.deltaDecorations([], [
+      {
+        range: {
+          startLineNumber: startLine,
+          startColumn: 1,
+          endLineNumber: endLine,
+          endColumn,
+        },
+        options: {
+          inlineClassName: "citation-highlight",
+          isWholeLine: false,
+        },
+      },
+    ]);
+
+    editor.revealLineInCenter(startLine);
   }, [activeCitation, editorRef.current]);
 
   if (loading) {

@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
 import { getRepositoryFiles } from "../../features/files/filesApi";
 import { useWorkspace } from "../../context/WorkspaceContext";
 
-export function FileExplorer({ repositoryId }) {
+export function FileExplorer({ repositoryId, className }) {
   const { selectFile, selectedFile, clearSelection } = useWorkspace();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +138,9 @@ export function FileExplorer({ repositoryId }) {
   }
 
   return (
-    <div className="h-full flex flex-col min-h-[200px]">
+    <div
+      className={"h-full flex flex-col min-h-[200px] " + (className ?? "")}
+    >
       <div className="border-b border-line px-4 py-3">
         <div className="flex items-center gap-1.5">
           <Folder size={14} className="text-accent" />

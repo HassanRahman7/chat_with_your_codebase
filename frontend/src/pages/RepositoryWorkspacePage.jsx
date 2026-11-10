@@ -1,9 +1,7 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   AlertTriangle,
-  GitBranch,
-  GitCommitHorizontal,
   Loader2,
   RefreshCw,
   Trash2,
@@ -23,7 +21,6 @@ import {
   deleteRepository,
   startIndexing,
 } from "../features/repositories/repositoriesApi";
-import { formatDateTime, shortSha } from "../lib/format";
 import { useRepositoryStatus } from "../hooks/useRepositoryStatus";
 import { useSystemHealth } from "../hooks/useSystemHealth";
 import { WorkspaceProvider } from "../context/WorkspaceContext";
@@ -38,7 +35,6 @@ export function RepositoryWorkspacePage() {
   const [actionError, setActionError] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [conversationId, setConversationId] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
 
   async function handleReindex() {
     setBusyAction("reindex");
@@ -69,6 +65,7 @@ export function RepositoryWorkspacePage() {
   const jobActive = job?.status === "queued" || job?.status === "running";
   const notFound = error?.status === 404;
   const isReady = status?.repository_status === "ready";
+  const chatDisabled = !isReady || jobActive;
 
   return (
     <AppShell health={health} sidebar={<DashboardSidebar health={health} />}>
@@ -170,18 +167,22 @@ export function RepositoryWorkspacePage() {
             </div>
 
             <div className="flex-1 overflow-hidden flex">
-              <FileExplorer repositoryId={repositoryId} />
-
-              <CodeViewer
+              {/* Left: file explorer */}
+              <FileExplorer
                 repositoryId={repositoryId}
-                filePath={selectedFile?.path}
-                commitSha={selectedFile?.commitSha}
+                className="w-64 shrink-0 border-r border-line"
               />
 
+              {/* Middle: code viewer */}
+              <CodeViewer repositoryId={repositoryId} />
+
+              {/* Right: chat */}
               <ChatWindow
                 repositoryId={repositoryId}
                 conversationId={conversationId}
                 setConversationId={setConversationId}
+                disabled={chatDisabled}
+                className="w-[380px] shrink-0 border-l border-line min-w-[300px]"
               />
             </div>
 

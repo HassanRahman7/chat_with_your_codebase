@@ -60,6 +60,13 @@
 }
 
 @layer utilities {
+  .citation-highlight {
+    background-color: color-mix(in srgb, var(--color-accent) 22%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+    border-radius: 2px;
+    box-decoration-break: clone;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
