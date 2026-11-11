@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { getFileContent } from "../../features/files/filesApi";
@@ -10,28 +10,35 @@ const editorOptions = {
   language: "text",
   lineNumbers: "on",
   readOnly: true,
-  wordWrap: "bounded",
-  minimap: { enabled: false },
-  fontSize: 13,
+  wordWrap: "off",
+  minimap: { enabled: true },
+  fontSize: 14,
   fontFamily:
     "'JetBrains Mono', ui-monospace, SFMono-Regular, 'Cascadia Code', monospace",
-  lineHeight: 1.6,
-  padding: { top: 16, bottom: 16, left: 24, right: 24 },
+  lineHeight: 22,
+  padding: { top: 8, bottom: 8, left: 24, right: 24 },
   scrollBeyondLastLine: false,
   automaticLayout: true,
+  renderLineHighlight: "line",
+  glyphMargin: true,
+  folding: true,
+  quickSuggestions: false,
+  suggestOnTriggerCharacters: false,
+  acceptSuggestionOnCommitCharacter: false,
+  acceptSuggestionOnEnter: "off",
 };
 
 export function CodeViewer({ repositoryId }) {
-  const { selectCitation, activeCitation, selectedFile } = useWorkspace();
+  const { activeCitation, selectedFile } = useWorkspace();
   const editorRef = useRef(null);
   const decorationIds = useRef([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("text");
+  const [modelName, setModelName] = useState("");
 
   const filePath = selectedFile?.path;
-  const commitSha = selectedFile?.commitSha;
 
   const controllerRef = useRef(null);
 
@@ -39,6 +46,7 @@ export function CodeViewer({ repositoryId }) {
     if (!filePath) {
       setContent("");
       setLanguage("text");
+      setModelName("");
       setError(null);
       setLoading(false);
       return;
@@ -58,6 +66,7 @@ export function CodeViewer({ repositoryId }) {
       const data = await getFileContent(repositoryId, file, controller.signal);
       setContent(data.content || "");
       setLanguage(data.language || "text");
+      setModelName(data.language || "text");
     } catch (err) {
       if (err?.cancelled) return;
       setError(err.message || "Could not load file content.");
@@ -126,28 +135,38 @@ export function CodeViewer({ repositoryId }) {
     );
   }
 
+  const fileName = filePath.split("/").pop() || filePath;
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-line flex items-center justify-between bg-background/90 backdrop-blur px-4 py-2 z-10 shrink-0">
-        <span className="font-mono text-[11px] text-muted/80 truncate max-w-[60%] block">
-          {filePath}
-        </span>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-control border border-line bg-white text-[11px] text-muted">
-          {language}
-        </span>
+    <div className="h-full flex flex-col min-w-0">
+      {/* Editor toolbar (fixed at top, content scrolls beneath) */}
+      <div className="border-b border-line flex items-center justify-between bg-surface/90 backdrop-blur px-4 py-2 z-10 shrink-0 flex-shrink-0">
+        <div className="flex items-center gap-2 px-2 py-0.5 rounded-control border border-line bg-background text-[11px] text-muted font-mono">
+          {fileName}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-control border border-line bg-white text-[11px] text-muted font-mono">
+            {language}
+          </span>
+          <span className="text-[10px] text-muted/60 font-mono">
+            {modelName}
+          </span>
+        </div>
       </div>
 
-      <MonacoEditor
-        height="100%"
-        width="100%"
-        language={language}
-        value={content}
-        theme="vs-dark"
-        options={editorOptions}
-        onMount={(editor) => {
-          editorRef.current = editor;
-        }}
-      />
+      <div className="flex-1 min-h-0 relative">
+        <MonacoEditor
+          height="100%"
+          width="100%"
+          language={language}
+          value={content}
+          theme="vs-dark"
+          options={editorOptions}
+          onMount={(editor) => {
+            editorRef.current = editor;
+          }}
+        />
+      </div>
     </div>
   );
 }

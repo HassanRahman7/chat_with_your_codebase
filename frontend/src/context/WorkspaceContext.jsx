@@ -6,6 +6,8 @@ export function WorkspaceProvider({ children }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [activeCitation, setActiveCitation] = useState(null);
   const [activeConversationId, setActiveConversationId] = useState(null);
+  const [explorerCollapsed, setExplorerCollapsed] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
 
   const selectFile = useCallback((filePath, commitSha) => {
     setSelectedFile({ path: filePath, commitSha });
@@ -28,6 +30,14 @@ export function WorkspaceProvider({ children }) {
     setActiveCitation(null);
   }, []);
 
+  const toggleExplorer = useCallback(() => {
+    setExplorerCollapsed((prev) => !prev);
+  }, []);
+
+  const toggleChat = useCallback(() => {
+    setChatCollapsed((prev) => !prev);
+  }, []);
+
   const value = {
     selectedFile,
     selectFile,
@@ -36,9 +46,19 @@ export function WorkspaceProvider({ children }) {
     clearSelection,
     activeConversationId,
     setActiveConversationId,
+    explorerCollapsed,
+    setExplorerCollapsed,
+    toggleExplorer,
+    chatCollapsed,
+    setChatCollapsed,
+    toggleChat,
   };
 
-  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
+  return (
+    <WorkspaceContext.Provider value={value}>
+      {children}
+    </WorkspaceContext.Provider>
+  );
 }
 
 export function useWorkspace() {

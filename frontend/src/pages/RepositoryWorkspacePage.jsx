@@ -1,29 +1,22 @@
 import { useState } from "react";
-import {
-  ArrowLeft,
-  AlertTriangle,
-  Loader2,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Loader2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
 
-import { AppShell } from "../components/layout/AppShell";
+import { cn } from "../lib/utils";
+import { AppLayout } from "../components/layout/AppLayout";
 import { DashboardSidebar } from "../components/layout/DashboardSidebar";
-import { RepositoryStatusBadge } from "../components/repository/RepositoryStatusBadge";
+import { RepositoryToolbar } from "../components/workspace/RepositoryToolbar";
 import { FileExplorer } from "../components/repository/FileExplorer";
 import { CodeViewer } from "../components/code/CodeViewer";
 import { ChatWindow } from "../components/chat/ChatWindow";
-import { Button } from "../components/ui/Button";
 import { ConfirmDialog } from "../components/ui/ConfirmDialog";
-import { Panel } from "../components/ui/Panel";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   deleteRepository,
-  startIndexing,
 } from "../features/repositories/repositoriesApi";
 import { useRepositoryStatus } from "../hooks/useRepositoryStatus";
 import { useSystemHealth } from "../hooks/useSystemHealth";
-import { WorkspaceProvider } from "../context/WorkspaceContext";
+import { WorkspaceProvider, useWorkspace } from "../context/WorkspaceContext";
 
 export function RepositoryWorkspacePage() {
   const { repositoryId } = useParams();
@@ -31,33 +24,18 @@ export function RepositoryWorkspacePage() {
   const health = useSystemHealth();
   const { repository, status, state, error, refresh } =
     useRepositoryStatus(repositoryId);
-  const [busyAction, setBusyAction] = useState(null);
-  const [actionError, setActionError] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [actionError, setActionError] = useState(null);
   const [conversationId, setConversationId] = useState(null);
 
-  async function handleReindex() {
-    setBusyAction("reindex");
-    setActionError(null);
-    try {
-      await startIndexing(repositoryId, { force: true });
-      refresh();
-    } catch (requestError) {
-      setActionError(requestError);
-    } finally {
-      setBusyAction(null);
-    }
-  }
-
   async function handleDelete() {
-    setBusyAction("delete");
     setActionError(null);
     try {
       await deleteRepository(repositoryId);
       navigate("/dashboard");
     } catch (requestError) {
       setActionError(requestError);
-      setBusyAction(null);
+    } finally {
     }
   }
 
@@ -68,150 +46,30 @@ export function RepositoryWorkspacePage() {
   const chatDisabled = !isReady || jobActive;
 
   return (
-    <AppShell health={health} sidebar={<DashboardSidebar health={health} />}>
+    <AppLayout
+      health={health}
+      sidebar={<DashboardSidebar health={health} />}
+    >
       <WorkspaceProvider>
-        {state === "loading" || state === "refreshing" ? (
-          <Panel className="flex h-full items-center justify-center gap-2 px-6 py-16 text-[13px] text-muted">
-            <Loader2 size={15} className="animate-spin" aria-hidden="true" />
-            Loading repository…
-          </Panel>
-        ) : state === "error" ? (
-          <Panel className="px-6 py-14 text-center">
-            <AlertTriangle
-              size={20}
-              className="mx-auto text-danger"
-              aria-hidden="true"
-            />
-            <h1 className="mt-3 text-[18px] font-semibold text-ink">
-              {notFound ? "Repository not found" : "Repository unavailable"}
-            </h1>
-            <p className="mx-auto mt-1 max-w-md text-[13px] text-muted">
-              {error?.message ||
-                "We could not load this repository from the API."}
-            </p>
-            <div className="mt-5 flex justify-center gap-2">
-              {!notFound ? (
-                <Button variant="secondary" onClick={refresh}>
-                  Try again
-                </Button>
-              ) : null}
-              <Link to="/dashboard">
-                <Button variant="primary">
-                  <ArrowLeft size={14} aria-hidden="true" />
-                  Back to repositories
-                </Button>
-              </Link>
-            </div>
-          </Panel>
-        ) : (
-          <div className="flex h-full flex-col">
-            <div className="border-b border-line bg-background/90 backdrop-blur px-4 py-3 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center gap-1.5 rounded-control text-[12px] font-medium text-muted transition-colors hover:text-ink"
-                >
-                  <ArrowLeft size={13} aria-hidden="true" />
-                  Repositories
-                </Link>
-                <h1 className="text-[16px] font-semibold text-ink truncate">
-                  {repository?.owner_name
-                    ? `${repository.owner_name}/`
-                    : ""}
-                  {repository?.repository_name}
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <RepositoryStatusBadge
-                  status={status?.repository_status ?? repository?.status}
-                  errorCode={job?.error_code}
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={refresh}
-                  disabled={state === "refreshing"}
-                >
-                  Refresh
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleReindex}
-                  disabled={busyAction === "reindex" || jobActive || !isReady}
-                  title={
-                    jobActive
-                      ? "Indexing is already in progress"
-                      : !isReady
-                        ? "Repository is not ready yet"
-                        : "Queue a new indexing job"
-                  }
-                >
-                  {busyAction === "reindex" ? (
-                    <Loader2 size={13} className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <RefreshCw size={13} aria-hidden="true" />
-                  )}
-                  Re-index
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={busyAction === "delete"}
-                  className="text-muted hover:text-danger"
-                >
-                  <Trash2 size={13} aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-hidden flex">
-              {/* Left: file explorer */}
-              <FileExplorer
-                repositoryId={repositoryId}
-                className="w-64 shrink-0 border-r border-line"
-              />
-
-              {/* Middle: code viewer */}
-              <CodeViewer repositoryId={repositoryId} />
-
-              {/* Right: chat */}
-              <ChatWindow
-                repositoryId={repositoryId}
-                conversationId={conversationId}
-                setConversationId={setConversationId}
-                disabled={chatDisabled}
-                className="w-[380px] shrink-0 border-l border-line min-w-[300px]"
-              />
-            </div>
-
-            {actionError ? (
-              <div
-                role="alert"
-                className="absolute bottom-4 left-4 right-4 flex items-start gap-2 rounded-control border border-danger/25 bg-danger/[0.06] px-3 py-3 text-[12px] leading-5 text-danger z-20"
-              >
-                <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-                <span>{actionError.message || "That action could not be completed."}</span>
-              </div>
-            ) : null}
-
-            {!isReady && (
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center z-20">
-                <Panel className="rounded-control border border-warning/25 bg-warning/[0.06] px-4 py-3 text-[12px] text-warning flex items-center gap-2 shadow-sm">
-                  <span className="flex size-3.5 shrink-0">
-                    <span className="size-full rounded-full bg-warning animate-pulse" />
-                  </span>
-                  <span className="truncate">
-                    Repository is being indexed. Chat and file browsing will be
-                    available when indexing completes.
-                  </span>
-                </Panel>
-              </div>
-            )}
-          </div>
-        )}
-
+        <WorkspaceContent
+          repositoryId={repositoryId}
+          repository={repository}
+          status={status}
+          state={state}
+          error={error}
+          refresh={refresh}
+          isReady={isReady}
+          chatDisabled={chatDisabled}
+          conversationId={conversationId}
+          setConversationId={setConversationId}
+          actionError={actionError}
+          setActionError={setActionError}
+          confirmDelete={confirmDelete}
+          setConfirmDelete={setConfirmDelete}
+          handleDelete={handleDelete}
+          navigate={navigate}
+          notFound={notFound}
+        />
         <ConfirmDialog
           open={confirmDelete}
           title={`Delete ${repository?.repository_name ?? "repository"}?`}
@@ -219,9 +77,199 @@ export function RepositoryWorkspacePage() {
           confirmLabel="Delete repository"
           onCancel={() => setConfirmDelete(false)}
           onConfirm={handleDelete}
-          pending={busyAction === "delete"}
+          pending={false}
         />
       </WorkspaceProvider>
-    </AppShell>
+    </AppLayout>
+  );
+}
+
+function WorkspaceContent({
+  repositoryId,
+  repository,
+  status,
+  state,
+  error,
+  refresh,
+  isReady,
+  chatDisabled,
+  conversationId,
+  setConversationId,
+  actionError,
+  setActionError,
+  confirmDelete,
+  setConfirmDelete,
+  handleDelete,
+  navigate,
+  notFound,
+}) {
+  const {
+    explorerCollapsed,
+    setExplorerCollapsed,
+    chatCollapsed,
+    setChatCollapsed,
+  } = useWorkspace();
+
+  const job = status?.job;
+  const jobActive = job?.status === "queued" || job?.status === "running";
+
+  return (
+    <>
+      {state === "loading" || state === "refreshing" ? (
+        <div className="flex h-full items-center justify-center gap-2 px-6 py-16 text-[13px] text-muted">
+          <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+          Loading repository…
+        </div>
+      ) : state === "error" ? (
+        <div className="flex h-full flex-col items-center justify-center px-6 py-14 text-center">
+          <AlertTriangle
+            size={20}
+            className="mx-auto text-danger"
+            aria-hidden="true"
+          />
+          <h1 className="mt-3 text-[18px] font-semibold text-ink">
+            {notFound ? "Repository not found" : "Repository unavailable"}
+          </h1>
+          <p className="mx-auto mt-1 max-w-md text-[13px] text-muted">
+            {error?.message ||
+              "We could not load this repository from the API."}
+          </p>
+          <div className="mt-5 flex justify-center gap-2">
+            {!notFound ? (
+              <button
+                onClick={refresh}
+                className="rounded-control border border-line bg-white px-4 py-2 text-[13px] font-medium text-ink hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                disabled={state === "refreshing"}
+              >
+                Try again
+              </button>
+            ) : null}
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="rounded-control border border-line bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              <ArrowLeft size={14} className="mr-1" aria-hidden="true" />
+              Back to repositories
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full flex-col min-w-0">
+          <RepositoryToolbar
+            repository={repository}
+            status={status}
+            job={job}
+            jobActive={jobActive}
+            isReady={isReady}
+            state={state}
+            refresh={refresh}
+            onReindex={() => {
+              // Re-index handled by toolbar's own hook
+            }}
+            onDeleteNavigate={() => navigate("/dashboard")}
+          />
+
+          <div className="flex flex-row flex-1 overflow-hidden min-w-0 min-h-0 relative bg-white">
+            {/* Panel A: File Explorer */}
+            <div
+              className={cn(
+                "flex flex-col shrink-0 border-r border-line transition-all duration-200",
+                explorerCollapsed ? "w-0 hidden" : "w-[260px]",
+              )}
+            >
+              <FileExplorer
+                repositoryId={repositoryId}
+                className="flex-1 min-h-[200px]"
+              />
+            </div>
+
+            {/* Explorer collapse toggle */}
+            {!explorerCollapsed && (
+              <button
+                onClick={() => setExplorerCollapsed(true)}
+                className="absolute left-[260px] top-1/2 -translate-y-1/2 p-1.5 rounded-control border border-line bg-white text-muted hover:bg-accent hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent z-20"
+                aria-label="Collapse explorer"
+              >
+                <ChevronLeft size={14} className="text-muted" />
+              </button>
+            )}
+            {explorerCollapsed && (
+              <button
+                onClick={() => setExplorerCollapsed(false)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 p-1.5 rounded-control border-r-0 border border-line bg-white text-muted hover:bg-accent hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent z-20"
+                aria-label="Expand explorer"
+              >
+                <ChevronRight size={14} className="text-muted" />
+              </button>
+            )}
+
+            {/* Panel B: Code Editor */}
+            <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+              <CodeViewer repositoryId={repositoryId} />
+            </div>
+
+            {/* Panel C: AI Chat */}
+            <div
+              className={cn(
+                "flex flex-col shrink-0 border-l border-line transition-all duration-200",
+                chatCollapsed ? "w-0 hidden" : "w-[400px]",
+              )}
+            >
+              <ChatWindow
+                repositoryId={repositoryId}
+                conversationId={conversationId}
+                setConversationId={setConversationId}
+                disabled={chatDisabled}
+                model="Nemotron 3 Ultra"
+              />
+            </div>
+
+            {/* Chat collapse toggle */}
+            {!chatCollapsed && (
+              <button
+                onClick={() => setChatCollapsed(true)}
+                className="absolute right-[400px] top-1/2 -translate-y-1/2 p-1.5 rounded-control border border-line bg-white text-muted hover:bg-accent hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent z-20"
+                aria-label="Collapse chat"
+              >
+                <ChevronLeft size={14} className="text-muted" />
+              </button>
+            )}
+            {chatCollapsed && (
+              <button
+                onClick={() => setChatCollapsed(false)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-control border-l-0 border border-line bg-white text-muted hover:bg-accent hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent z-20"
+                aria-label="Expand chat"
+              >
+                <ChevronRight size={14} className="text-muted" />
+              </button>
+            )}
+          </div>
+
+          {actionError ? (
+            <div
+              role="alert"
+              className="absolute bottom-4 left-4 right-4 flex items-start gap-2 rounded-control border border-danger/25 bg-danger/[0.06] px-3 py-3 text-[12px] leading-5 text-danger z-20"
+            >
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>{actionError.message || "That action could not be completed."}</span>
+            </div>
+          ) : null}
+
+          {!isReady && (
+            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center z-20">
+              <div className="rounded-control border border-warning/25 bg-warning/[0.06] px-4 py-3 text-[12px] text-warning flex items-center gap-2 shadow-sm max-w-md">
+                <span className="flex size-3.5 shrink-0">
+                  <span className="size-full rounded-full bg-warning animate-pulse" />
+                </span>
+                <span className="truncate">
+                  Repository is being indexed. Chat and file browsing will be
+                  available when indexing completes.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }

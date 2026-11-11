@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { Link, NavLink } from "react-router-dom";
 import { Braces } from "lucide-react";
 
@@ -10,7 +11,11 @@ const NAV_LINKS = [
   { label: "Status", href: "/#status" },
 ];
 
-export function Navbar({ health, className }) {
+export function Navbar({ health, className, hideNavLinks }) {
+  const location = useLocation();
+  const isWorkspace = location.pathname.includes("/workspace");
+  const showNavLinks = !hideNavLinks && !isWorkspace;
+
   return (
     <header
       className={cn(
@@ -32,28 +37,30 @@ export function Navbar({ health, className }) {
           </span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              cn(
-                "rounded-control px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-black/[0.04] hover:text-ink",
-                isActive ? "bg-surface text-white" : "text-muted",
-              )
-            }
-          >
-            Repositories
-          </NavLink>
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-control px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-ink"
+        {showNavLinks && (
+          <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                cn(
+                  "rounded-control px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-black/[0.04] hover:text-ink",
+                  isActive ? "bg-surface text-white" : "text-muted",
+                )
+              }
             >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+              Repositories
+            </NavLink>
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="rounded-control px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:bg-black/[0.04] hover:text-ink"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        )}
 
         <StatusPill health={health} />
       </div>

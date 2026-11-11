@@ -1,15 +1,67 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, File, Folder } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  File,
+  Folder,
+  FileCode,
+  FileText,
+  FileImage,
+  FileJson,
+  FileLock,
+  FileTerminal,
+  FileType,
+  FileVideo,
+  ChevronLeft,
+} from "lucide-react";
 
 import { getRepositoryFiles } from "../../features/files/filesApi";
 import { useWorkspace } from "../../context/WorkspaceContext";
 
+const ICON_MAP = {
+  ".py": FileCode,
+  ".js": FileCode,
+  ".jsx": FileCode,
+  ".ts": FileCode,
+  ".tsx": FileCode,
+  ".json": FileJson,
+  ".md": FileText,
+  ".txt": FileText,
+  ".html": FileCode,
+  ".css": FileCode,
+  ".scss": FileCode,
+  ".yaml": FileText,
+  ".yml": FileText,
+  ".toml": FileText,
+  ".cfg": FileText,
+  ".ini": FileText,
+  ".lock": FileLock,
+  ".sh": FileTerminal,
+  ".sql": FileText,
+  ".dockerfile": FileType,
+  ".env": FileLock,
+  ".gitignore": FileLock,
+  ".png": FileImage,
+  ".jpg": FileImage,
+  ".jpeg": FileImage,
+  ".gif": FileImage,
+  ".svg": FileImage,
+  ".mp4": FileVideo,
+  ".mov": FileVideo,
+};
+
+function getIconForFile(fileName) {
+  const ext = fileName.slice(fileName.lastIndexOf(".")).toLowerCase();
+  return ICON_MAP[ext] || File;
+}
+
 export function FileExplorer({ repositoryId, className }) {
-  const { selectFile, selectedFile, clearSelection } = useWorkspace();
+  const { selectFile, selectedFile } = useWorkspace();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState({});
+  const [collapsed, setCollapsed] = useState(false);
   const controllerRef = useRef(null);
 
   useEffect(() => {
@@ -40,7 +92,7 @@ export function FileExplorer({ repositoryId, className }) {
   }
 
   function isDirectoryExpanded(path) {
-    return expanded[path] !== false; // Default expanded
+    return expanded[path] !== false;
   }
 
   function renderTree(treeItems, depth = 0) {
@@ -48,15 +100,9 @@ export function FileExplorer({ repositoryId, className }) {
       if (item.type === "directory") {
         const isExpanded = isDirectoryExpanded(item.path);
         const children = isExpanded ? item.children || [] : [];
-        const isSelected =
-          selectedFile?.path === item.path ||
-          (selectedFile?.path && selectedFile.path.startsWith(`${item.path}/`));
 
         return (
-          <div
-            key={item.path}
-            className="flex flex-col gap-1"
-          >
+          <div key={item.path} className="flex flex-col gap-1">
             <div
               className="flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 cursor-pointer select-none hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               role="button"
@@ -86,6 +132,7 @@ export function FileExplorer({ repositoryId, className }) {
         );
       }
 
+      const Icon = getIconForFile(item.path);
       const isSelected = selectedFile?.path === item.path;
       return (
         <div
@@ -104,10 +151,8 @@ export function FileExplorer({ repositoryId, className }) {
           }}
           tabIndex={0}
         >
-          <File size={12} className="text-muted" />
-          <span className="text-[12px] text-ink truncate">
-            {item.name}
-          </span>
+          <Icon size={12} className="text-muted" />
+          <span className="text-[12px] text-ink truncate">{item.name}</span>
         </div>
       );
     });
@@ -122,32 +167,42 @@ export function FileExplorer({ repositoryId, className }) {
   }
 
   if (error) {
-    return (
-      <div className="p-4 text-[12px] text-danger">
-        {error}
-      </div>
-    );
+    return <div className="p-4 text-[12px] text-danger">{error}</div>;
   }
 
   if (!items || items.length === 0) {
     return (
-      <div className="p-4 text-[12px] text-muted/80">
-        No files available.
-      </div>
+      <div className="p-4 text-[12px] text-muted/80">No files available.</div>
     );
   }
 
   return (
     <div
-      className={"h-full flex flex-col min-h-[200px] " + (className ?? "")}
+      className={
+        "h-full flex flex-col min-h-[200px] shrink-0 border-r border-line bg-white " +
+        (className ?? "")
+      }
     >
-      <div className="border-b border-line px-4 py-3">
+      <div className="flex items-center justify-between border-b border-line px-4 py-3 shrink-0">
         <div className="flex items-center gap-1.5">
           <Folder size={14} className="text-accent" />
           <span className="text-[12px] font-semibold text-ink">Files</span>
         </div>
+        <button
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="p-1.5 rounded-control text-muted hover:bg-black/[0.04] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          aria-label={
+            collapsed ? "Expand explorer" : "Collapse explorer"
+          }
+        >
+          {collapsed ? (
+            <ChevronRight size={14} className="text-muted" />
+          ) : (
+            <ChevronLeft size={14} className="text-muted" />
+          )}
+        </button>
       </div>
-      <div className="overflow-y-auto p-2">
+      <div className={"overflow-y-auto p-2 " + (collapsed ? "hidden" : "")}>
         {renderTree(items)}
       </div>
     </div>
