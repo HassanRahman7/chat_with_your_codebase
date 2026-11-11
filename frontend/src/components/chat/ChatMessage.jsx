@@ -21,18 +21,14 @@ export function ChatMessage({ message, onCitationClick }) {
       <div className="flex items-start gap-2">
         {isUser ? null : (
           <div className="mt-1 shrink-0">
-            <span className="flex size-5 items-center justify-center rounded-full bg-accent text-white text-[10px]">
+            <span className="flex size-5 items-center justify-center rounded-full bg-[#f0e7f7] text-primary text-[10px]">
               AI
             </span>
           </div>
         )}
         <div className="flex-1">
           <div
-            className={`rounded-control p-3 text-[13px] leading-6 ${
-              isUser
-                ? "bg-accent text-white"
-                : "bg-white text-ink border border-line"
-            }`}
+            className={`rounded-control p-3 text-[13px] leading-6 ${isUser ? "bg-[#f0e7f7] text-ink" : "bg-white text-ink border border-line"}`}
           >
             {message.content}
           </div>

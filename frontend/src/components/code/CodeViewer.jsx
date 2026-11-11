@@ -140,7 +140,7 @@ export function CodeViewer({ repositoryId }) {
   return (
     <div className="h-full flex flex-col min-w-0">
       {/* Editor toolbar (fixed at top, content scrolls beneath) */}
-      <div className="border-b border-line flex items-center justify-between bg-surface/90 backdrop-blur px-4 py-2 z-10 shrink-0 flex-shrink-0">
+      <div className="border-b border-line flex items-center justify-between bg-white px-4 py-2 z-10 shrink-0 flex-shrink-0">
         <div className="flex items-center gap-2 px-2 py-0.5 rounded-control border border-line bg-background text-[11px] text-muted font-mono">
           {fileName}
         </div>

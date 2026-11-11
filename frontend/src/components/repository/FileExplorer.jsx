@@ -140,7 +140,7 @@ export function FileExplorer({ repositoryId, className }) {
           className={
             "flex items-center gap-1.5 rounded-[2px] px-2 py-0.5 cursor-pointer select-none hover:bg-black/[0.04] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent transition-colors" +
             (isSelected
-              ? " bg-accent/10 border border-accent/30"
+              ? " bg-[#f0e7f7] border border-primary/30"
               : "")
           }
           role="button"
@@ -151,7 +151,7 @@ export function FileExplorer({ repositoryId, className }) {
           }}
           tabIndex={0}
         >
-          <Icon size={12} className="text-muted" />
+          <Icon size={12} className={isSelected ? "text-primary" : "text-muted"} />
           <span className="text-[12px] text-ink truncate">{item.name}</span>
         </div>
       );

@@ -3,9 +3,12 @@ import { X, ChevronRight } from "lucide-react";
 
 import { Navbar } from "./Navbar";
 import { cn } from "../../lib/utils";
+import { useLocation } from "react-router-dom";
 
 export function AppLayout({ health, children, sidebar }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
+  const isWorkspace = location.pathname.includes("/workspace");
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
@@ -19,7 +22,7 @@ export function AppLayout({ health, children, sidebar }) {
         {sidebar && (
           <aside
             className={cn(
-              "flex flex-col shrink-0 border-r border-line bg-surface transition-all duration-200 z-20",
+              "flex flex-col shrink-0 border-r border-line bg-background transition-all duration-200 z-20",
               sidebarCollapsed ? "w-14" : "w-64",
             )}
           >
@@ -44,14 +47,14 @@ export function AppLayout({ health, children, sidebar }) {
                       <path d="M2 12l10 5 10-5" />
                     </svg>
                   </span>
-                  <span className="text-[13px] font-semibold text-white">
+                  <span className="text-[13px] font-semibold text-ink">
                     Codebase AI
                   </span>
                 </div>
               )}
               <button
                 onClick={toggleSidebar}
-                className="p-1.5 rounded-control text-white/70 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                className="p-1.5 rounded-control text-ink/70 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 {sidebarCollapsed ? (
@@ -72,16 +75,18 @@ export function AppLayout({ health, children, sidebar }) {
         </main>
       </div>
 
-      <footer className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="text-[13px] text-muted">
-            Codebase AI — every explanation connected to real code.
-          </p>
-          <p className="font-mono text-[11px] text-muted">
-            React · FastAPI · ChromaDB · Gemini
-          </p>
-        </div>
-      </footer>
+      {!isWorkspace && (
+        <footer className="border-t border-line">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="text-[13px] text-muted">
+              Codebase AI — every explanation connected to real code.
+            </p>
+            <p className="font-mono text-[11px] text-muted">
+              React · FastAPI · ChromaDB
+            </p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

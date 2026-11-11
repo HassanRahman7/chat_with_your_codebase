@@ -38,7 +38,7 @@ export function ChatInput({ repositoryId, conversationId, onAnswer, disabled }) 
   }
 
   return (
-    <div className="border-t border-line bg-surface p-4 shrink-0 flex flex-col gap-3">
+    <div className="border-t border-line bg-white p-4 shrink-0 flex flex-col gap-3">
       <form onSubmit={handleSubmit} className="relative flex-1 flex-col gap-2">
         <div className="relative flex-1">
           <Input
@@ -47,7 +47,7 @@ export function ChatInput({ repositoryId, conversationId, onAnswer, disabled }) 
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="Ask anything about this codebase…"
             disabled={pending || disabled}
-            className="h-10 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-accent focus:outline-none"
+            className="h-10 bg-white border-border-line text-ink placeholder-text-muted/50 focus:border-primary focus:outline-none"
           />
         </div>
         <Button

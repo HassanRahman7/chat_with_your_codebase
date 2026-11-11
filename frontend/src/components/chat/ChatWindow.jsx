@@ -127,10 +127,10 @@ export function ChatWindow({
       )}
     >
       {/* Chat header with model info */}
-      <div className="border-b border-line flex items-center justify-between bg-surface/90 backdrop-blur px-4 py-3 z-10 shrink-0 flex-shrink-0">
+      <div className="border-b border-line flex items-center justify-between bg-white px-4 py-3 z-10 shrink-0 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="flex size-6 items-center justify-center rounded-control bg-accent text-white">
-            <Bot size={14} className="text-white" aria-hidden="true" />
+          <div className="flex size-6 items-center justify-center rounded-control bg-[#f0e7f7] text-primary">
+            <Bot size={14} className="text-primary" aria-hidden="true" />
           </div>
           <div>
             <span className="text-[12px] font-semibold text-ink">Assistant</span>

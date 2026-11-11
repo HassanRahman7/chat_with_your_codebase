@@ -52,7 +52,7 @@ export function RepositoryToolbar({ onDeleteNavigate }) {
 
   return (
     <>
-      <header className="border-b border-line bg-background/90 backdrop-blur px-4 py-3 shrink-0 z-10 flex items-center justify-between">
+      <header className="border-b border-line bg-white px-4 py-3 shrink-0 z-10 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             to="/dashboard"
